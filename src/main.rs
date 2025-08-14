@@ -7,6 +7,8 @@ use std::path::Path;
 struct Args {
     #[arg(short, long)]
     path: String,
+    #[arg(short, long)]
+    filter: String,
 }
 
 fn list_files(path: &Path) -> Result<Vec<String>, std::io::Error> {
@@ -23,18 +25,34 @@ fn list_files(path: &Path) -> Result<Vec<String>, std::io::Error> {
     Ok(out)
 }
 
+fn filter_files(files: Vec<String>, filter: &str) -> Vec<String> {
+    files
+        .into_iter()
+        .filter(|file| file.contains(filter))
+        .collect()
+}
+
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse();
     let path = Path::new(&args.path);
-
+    let mut x: Vec<String> = Vec::new();
     if !path.exists() {
         eprintln!("Error: Path '{}' does not exist.", args.path);
         return Err("Path does not exist".into());
     }
 
     match list_files(path) {
-        Ok(list) => println!("{:#?}", list),
+        Ok(list) => x = list,
         Err(err) => eprintln!("Error listing files: {}", err),
+    }
+
+    let filtered = filter_files(x, &args.filter);
+    if filtered.is_empty() {
+        println!("No files found");
+    } else {
+        for file in filtered {
+            println!("{}", file);
+        }
     }
     Ok(())
 }
